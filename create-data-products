@@ -1,0 +1,60 @@
+#!/usr/bin/env duckdb -f
+
+.timer on
+
+copy (
+    select
+        source_id,
+        site_id,
+        epoch_ms(readout_time) at time zone 'utc' as readout_time,
+        (voltage->>'float')::double as voltage,
+        (pt100_resistance->>'float')::double as pt100_resistance,
+        (cvf3_fan_speed->>'float')::double as cvf3_fan_speed,
+        (heater_1->>'int')::int as heater_1,
+        (heater_2->>'int')::int as heater_2,
+    from 'export/reading.sensor.cmp22.jsonl.gz'
+    order by readout_time
+) to 'neon/reading.sensor.cmp22.parquet' (
+    format parquet,
+    parquet_version v2,
+    compression zstd
+);
+
+copy (
+    select
+        source_id,
+        site_id,
+        epoch_ms(readout_time) at time zone 'utc' as readout_time,
+        (relative_humidity->>'float')::double as relative_humidity,
+        (temperature->>'float')::double as temperature,
+        (dew_point->>'float')::double as dew_point,
+        (error_state->>'boolean')::bool as error_state,
+    from 'export/reading.sensor.hmp155.jsonl.gz'
+    order by readout_time
+) to 'neon/reading.sensor.hmp155.parquet' (
+    format parquet,
+    parquet_version v2,
+    compression zstd
+);
+
+copy (
+    select
+        source_id,
+        site_id,
+        epoch_ms(readout_time) at time zone 'utc' as readout_time,
+        (ux_wind_speed->>'float')::double as ux_wind_speed,
+        (uy_wind_speed->>'float')::double as uy_wind_speed,
+        (uz_wind_speed->>'float')::double as uz_wind_speed,
+        (sonic_temperature->>'float')::double as sonic_temperature,
+        (diagnostic->>'long')::long as diagnostic,
+        (pitch->>'float')::double as pitch,
+        (roll->>'float')::double as roll,
+        (board_temp->>'float')::double as board_temp,
+        (board_humidity->>'float')::double as board_humidity,
+    from 'export/reading.sensor.csat3b.jsonl.gz'
+    order by readout_time
+) to 'neon/reading.sensor.csat3b.parquet' (
+    format parquet,
+    parquet_version v2,
+    compression zstd
+);

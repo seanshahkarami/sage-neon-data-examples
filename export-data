@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for sensor in cmp22 hmp155 ptb330a csat3 csat3b li840a li850; do
+    echo $EPOCHSECONDS "exporting" "reading.sensor.${sensor}"
+    ./read-topic "reading.sensor.${sensor}" | gzip > "export/reading.sensor.${sensor}.jsonl.gz"
+done
