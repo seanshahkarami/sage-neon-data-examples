@@ -28,6 +28,8 @@ sensors=(
     picarro3way
 )
 
+mkdir -p export
+
 for sensor in "${sensors[@]}"; do
     echo $EPOCHSECONDS "exporting" "reading.sensor.${sensor}"
     ./read-topic "reading.sensor.${sensor}" | gzip > "export/reading.sensor.${sensor}.jsonl.gz"
