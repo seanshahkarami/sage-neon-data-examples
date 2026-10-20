@@ -1,0 +1,13 @@
+#!/usr/bin/env duckdb -f
+
+select
+    regexp_extract(filename, 'reading\.sensor\.(.+)\.parquet', 1) as product,
+    count(*) as n_rows,
+    count(distinct source_id) as n_sources,
+    min(readout_time) as first,
+    max(readout_time) as last,
+    now() - min(readout_time) as oldest,
+    now() - max(readout_time) as newest,
+from read_parquet('neon/*.parquet', filename = true, union_by_name = true)
+group by all
+order by product;
