@@ -50,7 +50,7 @@ memory D select * from 'neon/reading.sensor.hmp155.parquet' limit 10;
 Finally, there are various utils like `show-data-product-stats` and `summarize-data-products` which provide a high level description of the data. For example:
 
 ```sh
-$ $./show-data-product-stats 
+# ./show-data-product-stats 
 ┌────────────────────┬──────────┬───────────┬────────────────────────────┬───────────────────────────┬─────────────────────────┬─────────────────────────┐
 │      product       │  n_rows  │ n_sources │           first            │           last            │         oldest          │         newest          │
 │      varchar       │  int64   │   int64   │  timestamp with time zone  │ timestamp with time zone  │        interval         │        interval         │
@@ -83,7 +83,7 @@ $ $./show-data-product-stats
 ```
 
 ```sh
-$ $./summarize-data-products
+# ./summarize-data-products
 neon/reading.sensor.aepg600m_heated.parquet
 ┌─────────────────────────────┬──────────────────────┬──────────────────────┬──────────────────────┬───┬──────────────────────┬────────┬─────────────────┐
 │         column_name         │     column_type      │         min          │         max          │ … │         q75          │ count  │ null_percentage │
