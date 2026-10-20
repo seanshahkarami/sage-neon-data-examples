@@ -21,7 +21,10 @@ Once that's built, I have a few tools to export data.
 I also have a tool which converts some example topics into Parquet tables by running:
 
 ```sh
+# export a bunch of the topics to local jsonl.gz files using kcat
 ./export-data
+
+# create parquet files from those local jsonl.gz files for faster processing and analysis
 ./create-data-products
 ```
 
