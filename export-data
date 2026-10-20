@@ -1,6 +1,34 @@
 #!/bin/bash
 
-for sensor in cmp22 hmp155 ptb330a csat3 csat3b li840a li850; do
+sensors=(
+    cmp22
+    hmp155
+    ptb330a
+    csat3b
+    li850
+    nr01
+    hfp01sc
+    dualfan
+    grape
+    mwseries
+    mcseries
+    si111
+    spn1
+    gmp343
+    windobserverii
+    aepg600m_heated
+    mti300ahrs
+    solenoid
+    # these are bare scalar fields (no {"type": "value"} wrapping)
+    prt
+    pqs1
+    pump
+    pressuretransducer
+    li191r
+    picarro3way
+)
+
+for sensor in "${sensors[@]}"; do
     echo $EPOCHSECONDS "exporting" "reading.sensor.${sensor}"
     ./read-topic "reading.sensor.${sensor}" | gzip > "export/reading.sensor.${sensor}.jsonl.gz"
 done
