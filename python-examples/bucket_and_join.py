@@ -34,7 +34,6 @@ ptb330a as (
 select *
 from hmp155
 join ptb330a using (readout_time_start)
-where readout_time_start between '2026-10-20 10:00:00' and '2026-10-20 11:00:00'
 order by readout_time_start;
 """).pl()
 
