@@ -8,6 +8,10 @@
 # ///
 import duckdb
 
+# This example shows how to use duckdb to create a Polars dataframe of aligned HMP155 and PTB330 data
+# based on their 1 min rollup buckets.
+#
+# There are many ways to perform alignment and this is just one of many approaches.
 df = duckdb.sql("""
 with hmp155 as (
     select
