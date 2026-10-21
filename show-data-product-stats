@@ -1,4 +1,4 @@
-#!/usr/bin/env duckdb -f
+#!/usr/bin/env -S duckdb -f
 
 select
     regexp_extract(filename, 'reading\.sensor\.(.+)\.parquet', 1) as product,

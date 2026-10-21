@@ -1,4 +1,4 @@
-#!/usr/bin/env duckdb -f
+#!/usr/bin/env -S duckdb -f
 
 .timer on
 
