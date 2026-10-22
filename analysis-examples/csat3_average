@@ -1,0 +1,26 @@
+#!/usr/bin/env -S duckdb -f
+
+.timer on
+
+-- windowed avg
+select
+    time_bucket(interval 30 minute, readout_time) as readout_time_start,
+    avg(ux_wind_speed) as avg_ux_wind_speed,
+    avg(uy_wind_speed) as avg_uy_wind_speed,
+    avg(uz_wind_speed) as avg_uz_wind_speed,
+    count(*) as num_samples
+from '../neon/reading.sensor.csat3b.parquet'
+group by readout_time_start
+order by readout_time_start;
+
+-- latest 30 min avg
+select
+    avg(ux_wind_speed) as avg_ux_wind_speed,
+    avg(uy_wind_speed) as avg_uy_wind_speed,
+    avg(uz_wind_speed) as avg_uz_wind_speed,
+    count(*) as num_samples
+from (
+    select *, max(readout_time) over () as max_readout_time
+    from '../neon/reading.sensor.csat3b.parquet'
+)
+where readout_time > max_readout_time - interval 30 minute;
