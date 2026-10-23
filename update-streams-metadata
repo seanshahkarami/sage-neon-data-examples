@@ -6,10 +6,10 @@ import json
 with open("streams.sql", "w") as f:
     for path in Path("neon").glob("reading.sensor.*.parquet"):
         sensor_name = path.stem.removeprefix("reading.sensor.")
-        f.write(f"create or replace view {sensor_name} as select * from read_parquet('{path}');\n");
         data_path = Path("streams", sensor_name, "data.parquet")
         data_path.parent.mkdir(parents=True, exist_ok=True)
         path.copy(data_path)
+        f.write(f"create or replace view {sensor_name} as select * from read_parquet('{data_path}');\n");
         
         columns = [c for (c,) in duckdb.sql(f"select column_name from (describe from '{path}')").fetchall()]
         field_columns = [c for c in columns if c not in ["source_id", "site_id", "readout_time"]]
