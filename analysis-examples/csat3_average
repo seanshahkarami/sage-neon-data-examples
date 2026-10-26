@@ -1,8 +1,18 @@
 #!/usr/bin/env -S duckdb -f
 
+-- This is meant to be a driving example of how simple I would love querying and
+-- doing analysis on data to get within Sage some day.
+--
+-- While details about publishing are missing, notice that the SQL here if 100%
+-- focused on the actual analysis and not about interacting with sensors, doing
+-- data storage and management, etc.
+--
+-- This is not only simpler for users but it makes communicating the example
+-- much easier and in a way that's much more reusable.
+
 .timer on
 
--- windowed avg
+-- Example 1: Windowed 30 minute average
 select
     time_bucket(interval 30 minute, readout_time) as readout_time_start,
     avg(ux_wind_speed) as avg_ux_wind_speed,
@@ -13,7 +23,7 @@ from '../neon/reading.sensor.csat3b.parquet'
 group by readout_time_start
 order by readout_time_start;
 
--- latest 30 min avg
+-- Example 2: Latest 30 min average
 select
     avg(ux_wind_speed) as avg_ux_wind_speed,
     avg(uy_wind_speed) as avg_uy_wind_speed,
