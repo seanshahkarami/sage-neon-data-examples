@@ -3,7 +3,7 @@
 -- This is meant to be a driving example of how simple I would love querying and
 -- doing analysis on data to get within Sage some day.
 --
--- While details about publishing are missing, notice that the SQL here if 100%
+-- While details about publishing are missing, notice that the SQL here is 100%
 -- focused on the actual analysis and not about interacting with sensors, doing
 -- data storage and management, etc.
 --
