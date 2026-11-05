@@ -8,7 +8,7 @@ with open("streams.sql", "w") as f:
         sensor_name = path.stem.removeprefix("reading.sensor.")
         data_path = Path("streams", sensor_name, "data.parquet")
         data_path.parent.mkdir(parents=True, exist_ok=True)
-        path.copy(data_path)
+        data_path.hardlink_to(path)
         f.write(f"create or replace view {sensor_name} as select * from read_parquet('{data_path}');\n");
         
         columns = [c for (c,) in duckdb.sql(f"select column_name from (describe from '{path}')").fetchall()]
