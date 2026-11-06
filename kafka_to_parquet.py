@@ -7,7 +7,7 @@
 #     "pyarrow>=15",
 # ]
 # ///
-"""Dump Avro messages from a Kafka topic (last N per partition, or all) to Parquet.
+"""Dump Avro messages from a Kafka topic (last N per partition, since a time, or all) to Parquet.
 
 Reads the raw message bytes (no deserializer), strips the Confluent 5-byte
 header, decodes each record with fastavro using the writer schema from the
@@ -15,6 +15,8 @@ registry, and writes Parquet with pyarrow. The Arrow schema is built from the
 Avro schema, so ["null", T] unions become plain nullable T columns.
 
     uv run kafka_to_parquet.py reading.sensor.cmp22 -n 10 -o cmp22.parquet
+    uv run kafka_to_parquet.py reading.sensor.cmp22 -s 3600 -o cmp22.parquet  # last hour
+    uv run kafka_to_parquet.py reading.sensor.cmp22 -s 2h -o cmp22.parquet
     uv run kafka_to_parquet.py reading.sensor.cmp22 --all -o cmp22.parquet
     duckdb -c "select * from 'cmp22.parquet'"
 
@@ -28,6 +30,7 @@ import json
 import os
 import struct
 import sys
+import time
 from dataclasses import dataclass, field
 
 import fastavro
@@ -40,11 +43,12 @@ from confluent_kafka import Consumer, KafkaError, KafkaException, TopicPartition
 
 # --- Kafka: read raw bytes (like kcat without -s) ----------------------------
 
-def read_raw(broker: str, topic: str, last_n: int | None):
+def read_raw(broker: str, topic: str, last_n: int | None, since_ms: int | None = None):
     """Yield raw value bytes, then stop once every partition is caught up.
 
-    last_n=None reads each partition from its earliest retained offset;
-    otherwise only the last N messages of each partition.
+    since_ms reads each partition from its first message at or after that
+    time (Unix ms). Otherwise last_n=None reads each partition from its
+    earliest retained offset, and an int reads only the last N messages.
     """
     consumer = Consumer({
         "bootstrap.servers": broker,
@@ -59,7 +63,14 @@ def read_raw(broker: str, topic: str, last_n: int | None):
         assignments, expected = [], 0
         for p in md.partitions:
             low, high = consumer.get_watermark_offsets(TopicPartition(topic, p), timeout=10)
-            start = low if last_n is None else max(low, high - last_n)
+            if since_ms is not None:
+                # Offset of the first message at or after since_ms; -1 if none.
+                found = consumer.offsets_for_times([TopicPartition(topic, p, since_ms)], timeout=10)[0]
+                start = high if found.offset < 0 else max(low, found.offset)
+            elif last_n is None:
+                start = low
+            else:
+                start = max(low, high - last_n)
             if high > start:
                 assignments.append(TopicPartition(topic, p, start))
                 expected += high - start
@@ -229,6 +240,20 @@ class ParquetSink:
 
 # --- CLI ---------------------------------------------------------------------
 
+UNITS = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+
+
+def parse_duration(v: str) -> float:
+    """Seconds, either a plain number (3600) or with a unit suffix (30s, 15m, 2h, 7d)."""
+    try:
+        secs = float(v[:-1]) * UNITS[v[-1]] if v and v[-1] in UNITS else float(v)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"bad duration {v!r}: want seconds (3600) or 30s, 15m, 2h, 7d")
+    if not 0 < secs < float("inf"):
+        raise argparse.ArgumentTypeError("duration must be positive")
+    return secs
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("-b", default=os.environ.get("KAFKA_BROKER", "localhost:9094"),
@@ -239,16 +264,19 @@ def main():
     ap.add_argument("topic", help="Kafka topic")
     which = ap.add_mutually_exclusive_group()
     which.add_argument("-n", type=int, default=10, help="last N messages per partition (default 10)")
+    which.add_argument("-s", type=parse_duration, metavar="DURATION",
+                       help="read messages from this long ago to now: seconds (3600) or 30s, 15m, 2h, 7d")
     which.add_argument("--all", action="store_true", help="read the entire topic")
     ap.add_argument("-o", default="out.parquet", help="output Parquet file")
     ap.add_argument("--row-group-size", type=int, default=122_880,
                     help="rows per Parquet row group (default 122,880, same as DuckDB)")
     args = ap.parse_args()
 
+    since_ms = None if args.s is None else int((time.time() - args.s) * 1000)
     sink = ParquetSink(args.o, registry_fetcher(args.r), args.row_group_size)
     count = 0
     try:
-        for raw in read_raw(args.b, args.topic, None if args.all else args.n):
+        for raw in read_raw(args.b, args.topic, None if args.all else args.n, since_ms):
             sink.add(raw)
             count += 1
             if count % 100_000 == 0:
