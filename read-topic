@@ -8,4 +8,5 @@ podman run --rm --network=host kcat-avro \
 	-t "${1}" \
 	-o beginning \
 	-e \
+	-E \
 	-q
