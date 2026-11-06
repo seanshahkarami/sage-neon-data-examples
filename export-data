@@ -33,10 +33,10 @@ sensors=(
 mkdir -p export
 
 for sensor in "${sensors[@]}"; do
-    echo $EPOCHSECONDS "exporting" "reading.sensor.${sensor}"
+    echo "exporting" "reading.sensor.${sensor}" >&2
     if time ./read-topic "reading.sensor.${sensor}" | gzip > "export/reading.sensor.${sensor}.jsonl.gz"; then
-        echo $EPOCHSECONDS "done" "reading.sensor.${sensor}"
+        echo "done" "reading.sensor.${sensor}" >&2
     else
-        echo $EPOCHSECONDS "fail" "reading.sensor.${sensor}"
+        echo "fail" "reading.sensor.${sensor}" >&2
     fi
 done
